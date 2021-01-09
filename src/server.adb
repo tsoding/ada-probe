@@ -4,15 +4,17 @@ with AWS.Server;
 
 with Hello_World_CB;
 
-procedure Main is
+procedure Server is
     WS : AWS.Server.HTTP;
+    Port : Positive := AWS.Default.Server_Port;
 begin
     Put_Line("Call me on port"
-             & Positive'Image(AWS.Default.Server_Port)
-             & ", I will stop in 60 seconds...");
+             & Positive'Image(Port)
+             & ", I will stop if you press Q.");
     AWS.Server.Start(WS, "Hello, World",
                      Max_Connection => 1,
+                     Port => Port,
                      Callback => Hello_World_CB.HW_CB'Access);
-    delay 60.0;
+    AWS.Server.Wait(AWS.Server.Q_Key_Pressed);
     AWS.Server.Shutdown(WS);
 end;

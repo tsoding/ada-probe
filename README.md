@@ -17,6 +17,9 @@ $ sudo apt install gprbuild libaws18-dev
 To build the examples:
 
 ```console
-$ gprbuild -P ./server.gpr
 $ gprbuild -P ./wttr.gpr
+$ ./build/wttr novosibirsk
+
+$ gprbuild -P ./server.gpr
+$ iexplorer.exe http://localhost:8080/
 ```
