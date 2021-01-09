@@ -21,5 +21,9 @@ $ gprbuild -P ./wttr.gpr
 $ ./build/wttr novosibirsk
 
 $ gprbuild -P ./server.gpr
-$ iexplorer.exe http://localhost:8080/
+$ ./build/server
+$ iexplore.exe http://localhost:8080/
+
+$ gprbuild -P ./freenode.gpr
+$ ./build/freenode
 ```
