@@ -1,0 +1,7 @@
+b__*
+*.stderr
+*.stdout
+*.ali
+*.bexch
+*.o
+build/

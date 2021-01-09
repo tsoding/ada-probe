@@ -1,0 +1,7 @@
+with "aws";
+
+project Server is
+    for Source_Dirs use ("src");
+    for Languages use ("Ada");
+    for Main use ("main.adb");
+end Server;
