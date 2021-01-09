@@ -4,4 +4,6 @@ b__*
 *.ali
 *.bexch
 *.o
-build/
+*.swp
+build/*
+!build/.gitkeep
