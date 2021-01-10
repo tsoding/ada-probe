@@ -74,6 +74,23 @@ procedure Freenode is
         return Result;
     end;
 
+    function String_To_Chunk(S: in String) return Stream_Element_Array is
+        First: Stream_Element_Offset := Stream_Element_Offset(S'First);
+        Last: Stream_Element_Offset := Stream_Element_Offset(S'Last);
+        Result: Stream_Element_Array(First..Last);
+    begin
+        for Index in S'Range loop
+            Result(Stream_Element_Offset(Index)) := 
+                Stream_Element(Character'Pos(S(Index)));
+        end loop;
+        return Result;
+    end;
+
+    procedure Send_Line(Client: in out SSL.Socket_Type; Line: in String) is
+    begin
+        Client.Send(String_To_Chunk(Line & Character'Val(13) & Character'Val(10)));
+    end;
+
     -- NOTE: stolen from https://github.com/AdaCore/aws/blob/master/regtests/0243_sshort/sshort.adb#L156
     procedure Secure_Connection(Credentials: Irc_Credentials) is
         Client: SSL.Socket_Type;
@@ -86,6 +103,10 @@ procedure Freenode is
         SSL.Initialize(Config, "");
         Client.Set_Config(Config);
         Client.Connect(To_String(Credentials.Host), Credentials.Port);
+        Send_Line(Client, "PASS oauth:" & To_String(Credentials.Pass));
+        Send_Line(Client, "NICK " & To_String(Credentials.Nick));
+        Send_Line(Client, "JOIN " & To_String(Credentials.Channel));
+        Send_Line(Client, "PRIVMSG " & To_String(Credentials.Channel) & " :tsodinPog");
         while true loop
             declare
                 Chunk: Stream_Element_Array := Client.Receive;
