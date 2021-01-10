@@ -8,12 +8,12 @@ with AWS.Net; use AWS;
 with AWS.Net.SSL; use AWS.Net;
 
 procedure Freenode is
+    Secure : constant Boolean := False;
     Host   : constant String := "chat.freenode.net";
-    --Port   : constant Positive := 6697; -- SSL
-    Port   : constant Positive := 6667; -- Plain Text
+    Port   : constant Positive := (if Secure then 6697 else 6667);
 begin
     declare
-        Socket : Net.Socket_Type'Class := Net.Socket(False);
+        Socket : Net.Socket_Type'Class := Net.Socket(Secure);
     begin
         Net.Connect(Socket, Host, Port);
         declare
