@@ -7,6 +7,8 @@ with AWS.Default;
 with AWS.Net; use AWS;
 with AWS.Net.SSL; use AWS.Net;
 
+with Aids.Env; use Aids;
+
 procedure Freenode is
     type Irc_Credentials is record
         Host : Unbounded_String;
@@ -61,5 +63,24 @@ procedure Freenode is
         end loop;
     end;
 begin
-    Secure_Connection(Freenode);
+    --Secure_Connection(Freenode);
+    declare
+        Twitch: Env.Typ := Env.Slurp("twitch.env");
+
+        procedure Print_Key(Key: Unbounded_String) is
+            Value: Unbounded_String;
+        begin
+            if Env.Find(Twitch, Key, Value) then
+                Put_Line(To_String(Key) & " => " & To_String(Value));
+            else
+                Put_Line("Key `" & To_String(Key) & "` not found");
+            end if;
+        end;
+    begin
+        Print_Key(To_Unbounded_String("HOST"));
+        Print_Key(To_Unbounded_String("Foo"));
+        Print_Key(To_Unbounded_String("PORT"));
+        Print_Key(To_Unbounded_String("Bar"));
+        Print_Key(To_Unbounded_String("NICK"));
+    end;
 end;
