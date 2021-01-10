@@ -16,14 +16,8 @@ procedure Freenode is
         Port : Positive;
         Nick : Unbounded_String;
         Pass : Unbounded_String;
+        Channel : Unbounded_String;
     end record;
-
-    Freenode : constant Irc_Credentials := 
-        ( Host => To_Unbounded_String("chat.freenode.net"),
-          Port => 6697,
-          Nick => To_Unbounded_String(""),
-          Pass => To_Unbounded_String("")
-        );
 
     procedure Print_Irc_Credentials(C: in Irc_Credentials) is
     begin
@@ -31,35 +25,37 @@ procedure Freenode is
         Put_Line("Port: " & Positive'Image(C.Port));
         Put_Line("Nick: " & To_String(C.Nick));
         Put_Line("Pass: [REDACTED]");
+        Put_Line("Channel: " & To_String(C.Channel));
     end;
 
     function Irc_Credentials_From_File(File_Path: String) return Irc_Credentials is
         E: Env.Typ := Env.Slurp(File_Path);
         Result: Irc_Credentials;
 
-        Unknown_Env_Key : exception;
+        Env_Key_Not_Found : exception;
 
-        procedure Exctract_String(Key: in Unbounded_String; Value: out Unbounded_String) is
+        procedure Extract_String(Key: in Unbounded_String; Value: out Unbounded_String) is
         begin
             if not Env.Find(E, Key, Value) then
-                raise Unknown_Env_Key with (File_Path & ": unknown key `" & To_String(Key) & "`");
+                raise Env_Key_Not_Found with (File_Path & ": key `" & To_String(Key) & "` not found");
             end if;
         end;
 
-        procedure Exctract_Positive(Key: in Unbounded_String; Value: out Positive) is
+        procedure Extract_Positive(Key: in Unbounded_String; Value: out Positive) is
             S: Unbounded_String;
         begin
             if not Env.Find(E, Key, s) then
-                raise Unknown_Env_Key with (File_Path & ": unknown key `" & To_String(Key) & "`");
+                raise Env_Key_Not_Found with (File_Path & ": key `" & To_String(Key) & "` not found");
             end if;
 
             Value := Positive'Value(To_String(S));
         end;
     begin
-        Exctract_String(To_Unbounded_String("HOST"), Result.Host);
-        Exctract_Positive(To_Unbounded_String("PORT"), Result.Port);
-        Exctract_String(To_Unbounded_String("NICK"), Result.Nick);
-        Exctract_String(To_Unbounded_String("PASS"), Result.Pass);
+        Extract_String(To_Unbounded_String("HOST"), Result.Host);
+        Extract_Positive(To_Unbounded_String("PORT"), Result.Port);
+        Extract_String(To_Unbounded_String("NICK"), Result.Nick);
+        Extract_String(To_Unbounded_String("PASS"), Result.Pass);
+        Extract_String(To_Unbounded_String("CHANNEL"), Result.Channel);
         return Result;
     end;
 
