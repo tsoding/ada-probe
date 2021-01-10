@@ -24,12 +24,43 @@ procedure Freenode is
           Pass => To_Unbounded_String("")
         );
 
-    Twitch : constant Irc_Credentials :=
-        ( Host => To_Unbounded_String("irc.chat.twitch.tv"),
-          Port => 6697,
-          Nick => To_Unbounded_String("MrBotka"),
-          Pass => To_Unbounded_String("12345")
-        );
+    procedure Print_Irc_Credentials(C: in Irc_Credentials) is
+    begin
+        Put_Line("Host: " & To_String(C.Host));
+        Put_Line("Port: " & Positive'Image(C.Port));
+        Put_Line("Nick: " & To_String(C.Nick));
+        Put_Line("Pass: [REDACTED]");
+    end;
+
+    function Irc_Credentials_From_File(File_Path: String) return Irc_Credentials is
+        E: Env.Typ := Env.Slurp(File_Path);
+        Result: Irc_Credentials;
+
+        Unknown_Env_Key : exception;
+
+        procedure Exctract_String(Key: in Unbounded_String; Value: out Unbounded_String) is
+        begin
+            if not Env.Find(E, Key, Value) then
+                raise Unknown_Env_Key with (File_Path & ": unknown key `" & To_String(Key) & "`");
+            end if;
+        end;
+
+        procedure Exctract_Positive(Key: in Unbounded_String; Value: out Positive) is
+            S: Unbounded_String;
+        begin
+            if not Env.Find(E, Key, s) then
+                raise Unknown_Env_Key with (File_Path & ": unknown key `" & To_String(Key) & "`");
+            end if;
+
+            Value := Positive'Value(To_String(S));
+        end;
+    begin
+        Exctract_String(To_Unbounded_String("HOST"), Result.Host);
+        Exctract_Positive(To_Unbounded_String("PORT"), Result.Port);
+        Exctract_String(To_Unbounded_String("NICK"), Result.Nick);
+        Exctract_String(To_Unbounded_String("PASS"), Result.Pass);
+        return Result;
+    end;
 
     function Chunk_Image(Chunk: Stream_Element_Array) return String is
         Result : String(1..Integer(Chunk'Length));
@@ -62,25 +93,9 @@ procedure Freenode is
             end;
         end loop;
     end;
+
+    Twitch: Irc_Credentials := Irc_Credentials_From_File("twitch.env");
 begin
     --Secure_Connection(Freenode);
-    declare
-        Twitch: Env.Typ := Env.Slurp("twitch.env");
-
-        procedure Print_Key(Key: Unbounded_String) is
-            Value: Unbounded_String;
-        begin
-            if Env.Find(Twitch, Key, Value) then
-                Put_Line(To_String(Key) & " => " & To_String(Value));
-            else
-                Put_Line("Key `" & To_String(Key) & "` not found");
-            end if;
-        end;
-    begin
-        Print_Key(To_Unbounded_String("HOST"));
-        Print_Key(To_Unbounded_String("Foo"));
-        Print_Key(To_Unbounded_String("PORT"));
-        Print_Key(To_Unbounded_String("Bar"));
-        Print_Key(To_Unbounded_String("NICK"));
-    end;
+    Print_Irc_Credentials(Twitch);
 end;
