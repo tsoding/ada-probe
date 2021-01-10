@@ -2,6 +2,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Text_IO.Text_Streams; use Ada.Text_IO;
 with Ada.Streams; use Ada.Streams;
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with Ada.Command_Line; use Ada.Command_Line;
 
 with AWS.Default;
 with AWS.Net; use AWS;
@@ -94,8 +95,16 @@ procedure Freenode is
         end loop;
     end;
 
-    Twitch: Irc_Credentials := Irc_Credentials_From_File("twitch.env");
+    Not_Enough_Arguments: exception;
+
 begin
-    --Secure_Connection(Freenode);
-    Print_Irc_Credentials(Twitch);
+    if Argument_Count < 1 then
+        raise Not_Enough_Arguments;
+    end if;
+
+    declare
+        Twitch: Irc_Credentials := Irc_Credentials_From_File(Argument(1));
+    begin
+        Secure_Connection(Twitch);
+    end;
 end;
