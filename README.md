@@ -27,3 +27,9 @@ $ iexplore.exe http://localhost:8080/
 $ gprbuild -P ./freenode.gpr
 $ ./build/freenode
 ```
+
+## Screencasts
+
+| Thumbnail | Link |
+| --- | --- |
+| [![thumbnail](http://i3.ytimg.com/vi/ljeYMzDThMY/default.jpg)](https://www.youtube.com/watch?v=ljeYMzDThMY) | [Programming in Ada with AWS](https://www.youtube.com/watch?v=ljeYMzDThMY) |
