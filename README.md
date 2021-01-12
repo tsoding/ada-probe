@@ -33,3 +33,4 @@ $ ./build/freenode
 | Thumbnail | Link |
 | --- | --- |
 | [![thumbnail](http://i3.ytimg.com/vi/ljeYMzDThMY/default.jpg)](https://www.youtube.com/watch?v=ljeYMzDThMY) | [Programming in Ada — Part 1](https://www.youtube.com/watch?v=ljeYMzDThMY) |
+| [![thumbnail](http://i3.ytimg.com/vi/-wbMVnkCgOk/default.jpg)](https://www.youtube.com/watch?v=-wbMVnkCgOk) | [Programming in Ada — Part 2](https://www.youtube.com/watch?v=-wbMVnkCgOk) |
