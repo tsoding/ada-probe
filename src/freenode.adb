@@ -9,6 +9,7 @@ with AWS.Net; use AWS;
 with AWS.Net.SSL; use AWS.Net;
 
 with Aids.Env; use Aids;
+with Aids.Utilities; use Aids.Utilities;
 
 procedure Freenode is
     type Irc_Credentials is record
@@ -22,69 +23,60 @@ procedure Freenode is
     procedure Print_Irc_Credentials(C: in Irc_Credentials) is
     begin
         Put_Line("Host: " & To_String(C.Host));
-        Put_Line("Port: " & Positive'Image(C.Port));
+        Put_Line("Port:"  & Positive'Image(C.Port));
         Put_Line("Nick: " & To_String(C.Nick));
         Put_Line("Pass: [REDACTED]");
         Put_Line("Channel: " & To_String(C.Channel));
     end;
 
     function Irc_Credentials_From_File(File_Path: String) return Irc_Credentials is
+        
+        -- Key extraction functions.
+        Function Extract ( Key : String ) return String           with Inline;
+        Function Extract ( Key : String ) return Unbounded_String with Inline;
+        Function Extract ( Key : String ) return Positive         with Inline;
+        
         E: Env.Typ := Env.Slurp(File_Path);
-        Result: Irc_Credentials;
+        Key_Not_Found : exception;
 
-        Env_Key_Not_Found : exception;
-
-        procedure Extract_String(Key: in Unbounded_String; Value: out Unbounded_String) is
-        begin
-            if not Env.Find(E, Key, Value) then
-                raise Env_Key_Not_Found with (File_Path & ": key `" & To_String(Key) & "` not found");
-            end if;
-        end;
-
-        procedure Extract_Positive(Key: in Unbounded_String; Value: out Positive) is
-            S: Unbounded_String;
-        begin
-            if not Env.Find(E, Key, s) then
-                raise Env_Key_Not_Found with (File_Path & ": key `" & To_String(Key) & "` not found");
-            end if;
-
-            Value := Positive'Value(To_String(S));
-        end;
+        -- Base Extraction; provides for the key-not-found exception.
+        Function Extract ( Key : String ) return String is
+        Begin
+            Return E(Key);
+        Exception
+            when Constraint_Error => raise Key_Not_Found with 
+                  (File_Path & ": key `" & Key & "` not found");
+        End Extract;
+        
+        -- Extract & convert to an Unbounded_String.
+        Function Extract ( Key : String ) return Unbounded_String is
+            ( To_Unbounded_String( Source => Extract(Key) ) );
+        
+        -- Extract and convert to a Positive.
+        Function Extract ( Key : String ) return Positive is
+            Value : String renames Extract( Key );
+        Begin
+            Return Positive'Value( Value );
+        Exception
+            when Constraint_Error =>
+                raise Constraint_Error with
+                ''' & Value & "' could not be converted to a positive number.";
+        End Extract;
+        
     begin
-        Extract_String(To_Unbounded_String("HOST"), Result.Host);
-        Extract_Positive(To_Unbounded_String("PORT"), Result.Port);
-        Extract_String(To_Unbounded_String("NICK"), Result.Nick);
-        Extract_String(To_Unbounded_String("PASS"), Result.Pass);
-        Extract_String(To_Unbounded_String("CHANNEL"), Result.Channel);
-        return Result;
-    end;
-
-    function Chunk_Image(Chunk: Stream_Element_Array) return String is
-        Result : String(1..Integer(Chunk'Length));
-        Index : Natural := 1;
-    begin
-        for I in Chunk'Range loop
-            Result(Index) := Character'Val(Natural(Chunk(I)));
-            Index := Index + 1;
-        end loop;
-        return Result;
-    end;
-
-    function String_To_Chunk(S: in String) return Stream_Element_Array is
-        First: Stream_Element_Offset := Stream_Element_Offset(S'First);
-        Last: Stream_Element_Offset := Stream_Element_Offset(S'Last);
-        Result: Stream_Element_Array(First..Last);
-    begin
-        for Index in S'Range loop
-            Result(Stream_Element_Offset(Index)) := 
-                Stream_Element(Character'Pos(S(Index)));
-        end loop;
-        return Result;
+        return Result : constant Irc_Credentials := (
+           Nick    => Extract("NICK"),
+           Pass    => Extract("PASS"),
+           Channel => Extract("CHANNEL"),
+           Host    => Extract("HOST"),
+           Port    => Extract("PORT")
+          );
     end;
 
     procedure Send_Line(Client: in out SSL.Socket_Type; Line: in String) is
+        CRLF :  Constant String := (Character'Val(13), Character'Val(10));
     begin
-        Client.Send(String_To_Chunk(Line & Character'Val(13) & Character'Val(10)));
+        Client.Send(String_To_Chunk(Line & CRLF));
     end;
 
     -- NOTE: stolen from https://github.com/AdaCore/aws/blob/master/regtests/0243_sshort/sshort.adb#L156
@@ -99,10 +91,10 @@ procedure Freenode is
         SSL.Initialize(Config, "");
         Client.Set_Config(Config);
         Client.Connect(To_String(Credentials.Host), Credentials.Port);
-        Send_Line(Client, "PASS oauth:" & To_String(Credentials.Pass));
-        Send_Line(Client, "NICK " & To_String(Credentials.Nick));
-        Send_Line(Client, "JOIN " & To_String(Credentials.Channel));
-        Send_Line(Client, "PRIVMSG " & To_String(Credentials.Channel) & " :tsodinPog");
+        Send_Line( Client, "PASS oauth:" & To_String(Credentials.Pass));
+        Send_Line( Client, "NICK " & To_String(Credentials.Nick));
+        Send_Line( Client, "JOIN " & To_String(Credentials.Channel));
+        Send_Line( Client, "PRIVMSG " & To_String(Credentials.Channel) & " :tsodinPog");
         while true loop
             declare
                 Chunk: Stream_Element_Array := Client.Receive;
@@ -115,13 +107,14 @@ procedure Freenode is
     Not_Enough_Arguments: exception;
 
 begin
-    if Argument_Count < 1 then
+    if Argument_Count not in Positive then
         raise Not_Enough_Arguments;
     end if;
 
     declare
         Twitch: Irc_Credentials := Irc_Credentials_From_File(Argument(1));
     begin
+        Print_Irc_Credentials(Twitch);
         Secure_Connection(Twitch);
     end;
 end;
