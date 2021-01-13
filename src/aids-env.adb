@@ -1,6 +1,15 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
 package body Aids.Env is
+    Function Find(Env   : in Typ; 
+                  Key   : in String;
+                  Found : in out Boolean
+                 ) return String is
+    Begin
+        Found := Env.Contains( Key );
+        Return (if not Found then "" else Env(Key));
+    End Find;
+    
     function Index_Of(Line: in String; X: in Character; Result: out Integer) return Boolean is
     begin
         for Index in Line'Range loop
@@ -27,8 +36,8 @@ package body Aids.Env is
             begin
                 if Index_Of(Line, '=', Index) then
                     declare
-                        Key : Unbounded_String := To_Unbounded_String(Line(Line'First..Index-1));
-                        Value : Unbounded_String := To_Unbounded_String(Line(Index+1..Line'Last));
+                        Key   : String renames Line(Line'First..Index-1);
+                        Value : String renames Line(Index+1..Line'Last);
                     begin
                         Env_Hashed_Map.Insert(Result, Key, Value);
                     end;
@@ -47,12 +56,16 @@ package body Aids.Env is
     end;
 
     function Find(Env: in Typ; Key: in Unbounded_String; Value: out Unbounded_String) return Boolean is 
-        C: Env_Hashed_Map.Cursor := Env_Hashed_Map.Find(Env, Key);
+        Use Env_Hashed_Map;
+        
+        -- Renaming a function's return.
+        C : Cursor  renames Find(Env, To_String(Key));
     begin
-        if Env_Hashed_Map.Has_Element(C) then
-            Value := Env_Hashed_Map.Element(C);
-            return True;
-        end if;
-        return False;
+        -- Extended return example.
+        Return Occupied : Constant Boolean := Has_Element(C) do
+            if Occupied then
+                Value := To_Unbounded_String( Env_Hashed_Map.Element(C) );
+            end if;
+        End return;
     end;
 end Aids.Env;
