@@ -1,4 +1,5 @@
 with Ada.Text_IO; use Ada.Text_IO;
+with Ada.Strings.Fixed;
 
 package body Aids.Env is
     Function Find(Env   : in Typ; 
@@ -36,8 +37,19 @@ package body Aids.Env is
             begin
                 if Index_Of(Line, '=', Index) then
                     declare
-                        Key   : String renames Line(Line'First..Index-1);
-                        Value : String renames Line(Index+1..Line'Last);
+                        Prev  : Natural  renames Positive'Pred( Index );
+                        Next  : Positive renames Positive'Succ( index );
+                        
+                        -- Rename the Trim-function, and give it a default of
+                        -- both sides; this handles a line like:
+                        -- "   This_key      =     Some_Value "
+                        Function Trim(Object : String;
+                                      Sides  : Ada.Strings.Trim_End:= Ada.Strings.Both
+                                     ) return String
+                           renames Ada.Strings.Fixed.Trim;
+                          
+                        Key   : String renames Trim( Line(Line'First..Prev) );
+                        Value : String renames Trim( Line(Next..Line'Last)  );
                     begin
                         Env_Hashed_Map.Insert(Result, Key, Value);
                     end;
