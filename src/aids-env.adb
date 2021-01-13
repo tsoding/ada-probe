@@ -10,16 +10,17 @@ package body Aids.Env is
         Found := Env.Contains( Key );
         Return (if not Found then "" else Env(Key));
     End Find;
-    
+
     function Index_Of(Line: in String; X: in Character; Result: out Integer) return Boolean is
+        Index : Natural renames Ada.strings.Fixed.Index(
+           Source  => Line,
+           Pattern => (1 => X),
+           From    => Line'First
+          );
     begin
-        for Index in Line'Range loop
-            if Line(Index) = X then
-                Result := Index;
-                return True;
-            end if;
-        end loop;
-        return False;
+        Return Found : constant Boolean := Index in Positive do
+            Result:= Index;
+        End return;
     end;
 
     function Slurp(File_Path: String) return Env_Hashed_Map.Map is
