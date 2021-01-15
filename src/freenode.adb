@@ -1,3 +1,8 @@
+-- Personally, I'm not a fan of 'use <package>', but I guess that's what
+-- maintaining >1MLOC codebase for a couple of decades will do to you...
+
+with Ada.Characters.Latin_1; use Ada.Characters.Latin_1; -- for CR and LF
+with Ada.Exceptions;
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Text_IO.Text_Streams; use Ada.Text_IO;
 with Ada.Streams; use Ada.Streams;
@@ -8,9 +13,11 @@ with AWS.Default;
 with AWS.Net; use AWS;
 with AWS.Net.SSL; use AWS.Net;
 
-with Aids.Env; use Aids;
+with Aids.Env;
 
 procedure Freenode is
+   
+   
     type Irc_Credentials is record
         Host : Unbounded_String;
         Port : Positive;
@@ -19,6 +26,7 @@ procedure Freenode is
         Channel : Unbounded_String;
     end record;
 
+   
     procedure Print_Irc_Credentials(C: in Irc_Credentials) is
     begin
         Put_Line("Host: " & To_String(C.Host));
@@ -29,34 +37,20 @@ procedure Freenode is
     end;
 
     function Irc_Credentials_From_File(File_Path: String) return Irc_Credentials is
-        E: Env.Typ := Env.Slurp(File_Path);
-        Result: Irc_Credentials;
-
-        Env_Key_Not_Found : exception;
-
-        procedure Extract_String(Key: in Unbounded_String; Value: out Unbounded_String) is
-        begin
-            if not Env.Find(E, Key, Value) then
-                raise Env_Key_Not_Found with (File_Path & ": key `" & To_String(Key) & "` not found");
-            end if;
-        end;
-
-        procedure Extract_Positive(Key: in Unbounded_String; Value: out Positive) is
-            S: Unbounded_String;
-        begin
-            if not Env.Find(E, Key, s) then
-                raise Env_Key_Not_Found with (File_Path & ": key `" & To_String(Key) & "` not found");
-            end if;
-
-            Value := Positive'Value(To_String(S));
-        end;
+        E: Aids.Env.Typ := Aids.Env.Slurp(File_Path);
     begin
-        Extract_String(To_Unbounded_String("HOST"), Result.Host);
-        Extract_Positive(To_Unbounded_String("PORT"), Result.Port);
-        Extract_String(To_Unbounded_String("NICK"), Result.Nick);
-        Extract_String(To_Unbounded_String("PASS"), Result.Pass);
-        Extract_String(To_Unbounded_String("CHANNEL"), Result.Channel);
-        return Result;
+        -- E is a tagged type, so can use object.operation notation
+        -- using aggregates will prevent missing assignment of member variables
+        return Irc_Credentials'
+            (Host => E.Extract("HOST"),
+             Port => E.Extract("PORT`"),
+             Nick => E.Extract("NICK"),
+             Pass => E.Extract("PASS"),
+             Channel => E.Extract("CHANNEL"));
+    exception
+        when Error : Aids.Env.Env_Key_Not_Found =>
+            Put_Line(File_Path & ": " & Ada.Exceptions.Exception_Message(Error));
+        raise; -- re-raise, to exit program 
     end;
 
     function Chunk_Image(Chunk: Stream_Element_Array) return String is
@@ -84,7 +78,8 @@ procedure Freenode is
 
     procedure Send_Line(Client: in out SSL.Socket_Type; Line: in String) is
     begin
-        Client.Send(String_To_Chunk(Line & Character'Val(13) & Character'Val(10)));
+        -- CR and LF is defined in Ada.Characters.Latin_1
+        Client.Send(String_To_Chunk(Line & CR & LF));
     end;
 
     -- NOTE: stolen from https://github.com/AdaCore/aws/blob/master/regtests/0243_sshort/sshort.adb#L156
@@ -103,12 +98,10 @@ procedure Freenode is
         Send_Line(Client, "NICK " & To_String(Credentials.Nick));
         Send_Line(Client, "JOIN " & To_String(Credentials.Channel));
         Send_Line(Client, "PRIVMSG " & To_String(Credentials.Channel) & " :tsodinPog");
-        while true loop
-            declare
-                Chunk: Stream_Element_Array := Client.Receive;
-            begin
-                Put(Chunk_Image(Chunk));
-            end;
+        
+        -- Ada has actual infinite loops
+        loop
+            Put(Chunk_Image(Client.Receive));
         end loop;
     end;
 
@@ -119,9 +112,5 @@ begin
         raise Not_Enough_Arguments;
     end if;
 
-    declare
-        Twitch: Irc_Credentials := Irc_Credentials_From_File(Argument(1));
-    begin
-        Secure_Connection(Twitch);
-    end;
-end;
+    Secure_Connection(Irc_Credentials_From_File(Argument(1)));
+end Freenode;
