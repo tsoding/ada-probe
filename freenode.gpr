@@ -3,6 +3,28 @@ with "aws";
 project Freenode is
    for Source_Dirs use ("src");
    for Object_Dir use "build";
+
+   -- for Exec_Dir use "bin"; -- if you want a different Dir for the executable files
+
    for Languages use ("Ada");
+
+   -- Main is an array, so you could have more than one executable per project
    for Main use ("freenode.adb");
+
+
+   -- packages to specify switches, etc:
+
+   -- package Builder is
+   -- end Builder;
+
+   -- package Compiler is
+   --    for Default_Switches("Ada") use ("-g");
+   -- end Compiler;
+
+   -- package Binder is
+   -- end Binder;
+
+   -- package Linker is
+   -- end Linker;
+
 end Freenode;
